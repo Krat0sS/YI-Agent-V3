@@ -1,0 +1,1438 @@
+<!-- YI-Agent v4.0 — 重构版 (修复后端检测) -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YI-Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══ THEMES ═══ */
+[data-theme="light"] {
+  --bg-0:#fafafa;--bg-1:#ffffff;--bg-2:#f5f5f7;--bg-glass:rgba(255,255,255,0.72);
+  --t1:#1d1d1f;--t2:#6e6e73;--t3:#aeaeb2;--t-inv:#ffffff;
+  --accent:#0071e3;--accent-h:#0077ED;--accent-bg:rgba(0,113,227,0.08);--accent-glow:rgba(0,113,227,0.15);
+  --ok:#30d158;--warn:#ff9f0a;--err:#ff453a;
+  --bdr:rgba(0,0,0,0.06);--bdr-h:rgba(0,0,0,0.12);--bdr-a:rgba(0,113,227,0.4);
+  --sh1:0 1px 2px rgba(0,0,0,0.04);--sh2:0 4px 12px rgba(0,0,0,0.06);--sh-glow:0 0 20px rgba(0,113,227,0.12);
+}
+[data-theme="dark"] {
+  --bg-0:#0a0a0c;--bg-1:#141416;--bg-2:#1c1c1e;--bg-glass:rgba(20,20,22,0.85);
+  --t1:#f5f5f7;--t2:#a1a1a6;--t3:#636366;--t-inv:#1d1d1f;
+  --accent:#0a84ff;--accent-h:#409cff;--accent-bg:rgba(10,132,255,0.12);--accent-glow:rgba(10,132,255,0.2);
+  --ok:#30d158;--warn:#ff9f0a;--err:#ff453a;
+  --bdr:rgba(255,255,255,0.08);--bdr-h:rgba(255,255,255,0.15);--bdr-a:rgba(10,132,255,0.5);
+  --sh1:0 1px 2px rgba(0,0,0,0.3);--sh2:0 4px 12px rgba(0,0,0,0.4);--sh-glow:0 0 20px rgba(10,132,255,0.15);
+}
+[data-theme="ocean"] {
+  --bg-0:#0b1622;--bg-1:#0f1d2e;--bg-2:#152538;--bg-glass:rgba(15,29,46,0.88);
+  --t1:#e8edf4;--t2:#8fa3bf;--t3:#5a7091;--t-inv:#0b1622;
+  --accent:#4dabf7;--accent-h:#74c0fc;--accent-bg:rgba(77,171,247,0.12);--accent-glow:rgba(77,171,247,0.2);
+  --ok:#51cf66;--warn:#fcc419;--err:#ff6b6b;
+  --bdr:rgba(255,255,255,0.06);--bdr-h:rgba(255,255,255,0.12);--bdr-a:rgba(77,171,247,0.5);
+  --sh1:0 1px 2px rgba(0,0,0,0.3);--sh2:0 4px 12px rgba(0,0,0,0.35);--sh-glow:0 0 24px rgba(77,171,247,0.12);
+}
+[data-theme="lavender"] {
+  --bg-0:#f6f2fa;--bg-1:#faf8fc;--bg-2:#ede6f5;--bg-glass:rgba(250,248,252,0.8);
+  --t1:#241830;--t2:#7e6e94;--t3:#b0a3c0;--t-inv:#faf8fc;
+  --accent:#8b5cf6;--accent-h:#a78bfa;--accent-bg:rgba(139,92,246,0.08);--accent-glow:rgba(139,92,246,0.15);
+  --ok:#34d399;--warn:#fbbf24;--err:#f87171;
+  --bdr:rgba(36,24,48,0.06);--bdr-h:rgba(36,24,48,0.12);--bdr-a:rgba(139,92,246,0.4);
+  --sh1:0 1px 2px rgba(36,24,48,0.04);--sh2:0 4px 12px rgba(36,24,48,0.06);--sh-glow:0 0 20px rgba(139,92,246,0.12);
+}
+
+/* ═══ RESET ═══ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter','Noto Sans SC',-apple-system,sans-serif;background:var(--bg-0);color:var(--t1);overflow:hidden;height:100vh;transition:background .3s,color .3s}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr-h);border-radius:5px}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ═══ LAYOUT ═══ */
+.app{display:grid;grid-template-columns:56px 1fr;grid-template-rows:auto 1fr;height:100vh}
+
+/* ═══ HEADER ═══ */
+.header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--bg-glass);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--bdr);z-index:100;height:52px}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:1rem;letter-spacing:-.02em;user-select:none}
+.logo-i{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),#5856d6);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+.hdr-c{display:flex;align-items:center;gap:2px}
+.nav-btn{padding:5px 13px;border-radius:8px;border:none;background:transparent;color:var(--t2);font-size:.8rem;font-weight:500;transition:all .15s}
+.nav-btn:hover{background:var(--bg-2);color:var(--t1)}
+.nav-btn.on{background:var(--t1);color:var(--t-inv);font-weight:600}
+.hdr-r{display:flex;align-items:center;gap:6px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--t3);transition:background .3s}
+.status-dot.ok{background:var(--ok);animation:pulse 2s ease-in-out infinite}
+.status-dot.warn{background:var(--warn)}
+.status-dot.err{background:var(--err)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-txt{font-size:.72rem;color:var(--t2);font-weight:500}
+.ibtn{width:30px;height:30px;border-radius:50%;border:none;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;position:relative}
+.ibtn:hover{background:var(--bg-2);color:var(--t1)}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{background:var(--bg-1);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;transition:width .25s ease}
+.sidebar.collapsed{width:0;border-right:none}
+.sb-top{padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sb-btn{width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;position:relative}
+.sb-btn:hover{background:var(--bg-2);color:var(--t1)}
+.sb-btn.on{background:var(--accent-bg);color:var(--accent)}
+.sb-btn .badge{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--ok);border-radius:50%;border:2px solid var(--bg-1)}
+.sb-spacer{flex:1}
+.sb-bottom{padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+
+/* ═══ MAIN CONTENT ═══ */
+.main{display:flex;flex-direction:column;overflow:hidden;position:relative}
+.content-view{display:none;flex-direction:column;overflow:hidden;flex:1}
+.content-view.on{display:flex}
+
+/* ═══ BANNER ═══ */
+.banner{display:none;align-items:center;justify-content:center;gap:6px;padding:6px 14px;font-size:.72rem;font-weight:500;grid-column:1/-1;cursor:pointer;transition:all .2s}
+.banner.show{display:flex}
+.banner.warn{background:var(--warn);color:#fff}
+.banner.ok{background:var(--ok);color:#fff}
+.banner.err{background:var(--err);color:#fff}
+
+/* ═══ CHAT ═══ */
+.chat-scroll{flex:1;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px}
+.welcome-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),#5856d6);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:20px;box-shadow:var(--sh-glow)}
+.welcome h2{font-size:1.4rem;font-weight:700;letter-spacing:-.03em;margin-bottom:6px;background:linear-gradient(135deg,var(--t1),var(--t2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome p{font-size:.85rem;color:var(--t2);max-width:380px;line-height:1.6}
+.hints{display:flex;gap:7px;margin-top:24px;flex-wrap:wrap;justify-content:center;max-width:520px}
+.hint{padding:8px 14px;background:var(--bg-1);border:1px solid var(--bdr);border-radius:10px;font-size:.78rem;color:var(--t2);transition:all .2s}
+.hint:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);transform:translateY(-2px);box-shadow:var(--sh1)}
+.hint:active{transform:translateY(0)}
+
+/* ═══ MESSAGES ═══ */
+.msg{display:flex;gap:10px;max-width:700px;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg.bot{align-self:flex-start}
+.msg-av{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
+.msg.user .msg-av{background:var(--accent);color:#fff}
+.msg.bot .msg-av{background:linear-gradient(135deg,#5856d6,#af52de);color:#fff}
+.msg-body{flex:1;min-width:0}
+.msg-text{padding:10px 14px;border-radius:12px;font-size:.86rem;line-height:1.6;word-break:break-word;white-space:pre-wrap}
+.msg.user .msg-text{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.bot .msg-text{background:var(--bg-1);border:1px solid var(--bdr);border-bottom-left-radius:4px}
+.msg-meta{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:.68rem;color:var(--t3)}
+.msg-tag{padding:1px 6px;background:var(--accent-bg);color:var(--accent);border-radius:9999px;font-size:.63rem;font-weight:500}
+.tool-box{margin-top:6px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg-2);font-size:.72rem;overflow:hidden}
+.tool-box summary{padding:5px 10px;cursor:pointer;color:var(--t3);font-size:.7rem;user-select:none}
+.tool-box summary:hover{color:var(--t2)}
+.tool-box[open] summary{border-bottom:1px solid var(--bdr)}
+.tool-item{display:flex;align-items:center;gap:5px;padding:3px 10px;font-size:.72rem;color:var(--t2)}
+.tool-item+.tool-item{border-top:1px solid var(--bdr)}
+.tool-name{font-weight:500;color:var(--t1);font-family:'SF Mono','Fira Code',monospace;font-size:.7rem}
+.tool-time{margin-left:auto;color:var(--t3);font-size:.62rem}
+.tool-summary{list-style:none}
+.tool-summary::-webkit-details-marker{display:none}
+.progress-box{margin-top:6px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg-2);font-size:.72rem;overflow:hidden}
+.progress-box summary{padding:5px 10px;cursor:pointer;color:var(--t3);font-size:.7rem;user-select:none}
+.progress-box summary:hover{color:var(--t2)}
+.progress-box[open] summary{border-bottom:1px solid var(--bdr)}
+.progress-inner{padding:6px 10px;color:var(--t2);line-height:1.5}
+.thinking{display:flex;align-items:center;gap:7px;padding:10px 14px;animation:msgIn .25s ease}
+.tdots{display:flex;gap:4px}
+.tdots span{width:5px;height:5px;background:var(--t3);border-radius:50%;animation:dotP 1.4s ease-in-out infinite}
+.tdots span:nth-child(2){animation-delay:.2s}
+.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes dotP{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* ═══ INPUT ═══ */
+.input-bar{padding:10px 28px 16px;background:var(--bg-0)}
+.input-wrap{max-width:700px;margin:0 auto;position:relative}
+.input-box{display:flex;align-items:flex-end;background:var(--bg-1);border:1px solid var(--bdr);border-radius:12px;padding:8px 10px;transition:all .2s;box-shadow:var(--sh1)}
+.input-box:focus-within{border-color:var(--bdr-a);box-shadow:var(--sh-glow)}
+.input-box textarea{flex:1;border:none;outline:none;resize:none;font-size:.88rem;line-height:1.5;color:var(--t1);background:transparent;min-height:20px;max-height:110px;padding:3px 0}
+.input-box textarea::placeholder{color:var(--t3)}
+.btn-send{width:32px;height:32px;border-radius:9px;border:none;background:var(--t1);color:var(--t-inv);display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;flex-shrink:0}
+.btn-send:hover{opacity:.85;transform:scale(1.05)}
+.btn-send:active{transform:scale(.95)}
+.input-foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px;max-width:700px;margin-left:auto;margin-right:auto}
+.input-hint{font-size:.65rem;color:var(--t3)}
+.input-hint kbd{padding:1px 4px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:3px;font-size:.6rem}
+.model-pill{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;border:1px solid var(--bdr);background:var(--bg-1);font-size:.7rem;color:var(--t2);transition:all .15s;font-weight:500}
+.model-pill:hover{border-color:var(--accent);color:var(--accent)}
+.model-pill-dot{width:6px;height:6px;border-radius:50%}
+
+/* ═══ DROPDOWN ═══ */
+.dd-anchor{position:relative}
+.dd{position:absolute;top:calc(100% + 6px);right:0;width:300px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:200;opacity:0;transform:translateY(-5px) scale(.97);pointer-events:none;transition:all .2s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+.dd.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.dd-hdr{padding:12px 14px 8px;border-bottom:1px solid var(--bdr)}
+.dd-title{font-size:.8rem;font-weight:600;color:var(--t1)}
+.dd-sec{padding:6px}
+.dd-label{padding:3px 8px 5px;font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:3px 8px 6px}
+.theme-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 3px;border-radius:8px;border:2px solid transparent;background:transparent;transition:all .15s}
+.theme-btn:hover{background:var(--bg-2)}
+.theme-btn.on{border-color:var(--accent);background:var(--accent-bg)}
+.theme-dot{width:24px;height:24px;border-radius:6px;border:1px solid var(--bdr)}
+.theme-lbl{font-size:.6rem;color:var(--t2);font-weight:500}
+.cfg-field{padding:3px 8px;margin-bottom:5px}
+.cfg-label{font-size:.68rem;color:var(--t3);font-weight:500;margin-bottom:3px}
+.cfg-input{width:100%;padding:6px 9px;border:1px solid var(--bdr);border-radius:7px;background:var(--bg-2);color:var(--t1);font-size:.78rem;outline:none;transition:all .2s}
+.cfg-input:focus{border-color:var(--bdr-a);box-shadow:var(--sh-glow)}
+.cfg-input::placeholder{color:var(--t3)}
+.cfg-sel{width:100%;padding:6px 9px;border:1px solid var(--bdr);border-radius:7px;background:var(--bg-2);color:var(--t1);font-size:.78rem;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238e8e93' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+.cfg-sel:focus{border-color:var(--bdr-a)}
+.btn-primary{width:100%;padding:7px;border-radius:7px;border:none;background:var(--accent);color:#fff;font-size:.76rem;font-weight:600;transition:all .15s;margin-top:3px}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{padding:5px 10px;border-radius:7px;border:1px solid var(--bdr);background:transparent;color:var(--t2);font-size:.72rem;font-weight:500;transition:all .15s}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ MODEL SHEET ═══ */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg.show{opacity:1;pointer-events:auto}
+.sheet{width:100%;max-width:460px;background:var(--bg-2);border-radius:16px 16px 0 0;padding:16px;transform:translateY(100%);transition:transform .25s cubic-bezier(.34,1.56,.64,1);max-height:65vh;overflow-y:auto}
+.sheet-bg.show .sheet{transform:translateY(0)}
+.sheet-handle{width:32px;height:3px;background:var(--bdr-h);border-radius:2px;margin:0 auto 12px}
+.sheet-title{font-size:.82rem;font-weight:600;color:var(--t1);margin-bottom:10px;text-align:center}
+.sheet-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid var(--bdr);margin-bottom:6px;cursor:pointer;transition:all .15s;background:transparent;width:100%;text-align:left;color:var(--t1)}
+.sheet-item:hover{border-color:var(--bdr-h);background:var(--bg-2)}
+.sheet-item.on{border-color:var(--accent);background:var(--accent-bg)}
+.sheet-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sheet-info{flex:1}
+.sheet-name{font-size:.8rem;font-weight:600}
+.sheet-hint{font-size:.68rem;color:var(--t3);margin-top:1px}
+.sheet-badge{font-size:.6rem;padding:2px 7px;border-radius:9999px;font-weight:600;flex-shrink:0}
+.sheet-badge.free{background:rgba(48,209,88,.12);color:var(--ok)}
+.sheet-badge.pro{background:var(--accent-bg);color:var(--accent)}
+.sheet-chk{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--bdr-h);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.sheet-item.on .sheet-chk{background:var(--accent);border-color:var(--accent)}
+.sheet-item.on .sheet-chk::after{content:'✓';color:#fff;font-size:9px;font-weight:700}
+
+/* ═══ PAGE PANELS ═══ */
+.page-panel{display:none;flex-direction:column;flex:1;overflow:hidden}
+.page-panel.on{display:flex}
+.page-scroll{flex:1;overflow-y:auto;padding:28px 32px}
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.page-sub{font-size:.8rem;color:var(--t2);margin-top:3px}
+.page-actions{display:flex;gap:6px;align-items:center}
+.card{padding:11px;border-radius:10px;border:1px solid var(--bdr);margin-bottom:7px;transition:all .15s}
+.card:hover{border-color:var(--bdr-h)}
+.card-label{font-size:.66rem;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.card-val{font-size:1.2rem;font-weight:700;color:var(--t1);letter-spacing:-.02em}
+.card-sub{font-size:.68rem;color:var(--t3);margin-top:1px}
+.log-entry{display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border-radius:7px;margin-bottom:3px;font-size:.72rem;transition:all .1s}
+.log-entry:hover{background:var(--bg-2)}
+.log-icon{flex-shrink:0;margin-top:1px}
+.log-text{flex:1;color:var(--t2);line-height:1.3}
+.log-time{font-size:.6rem;color:var(--t3);flex-shrink:0;margin-top:1px}
+
+/* ═══ TOOL/SKILL CARDS ═══ */
+.tcard{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid var(--bdr);margin-bottom:6px;transition:all .15s}
+.tcard:hover{border-color:var(--bdr-h)}
+.tcard-name{font-size:.8rem;font-weight:600;font-family:'SF Mono','Fira Code',monospace}
+.tcard-desc{font-size:.7rem;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.risk-tag{font-size:.58rem;padding:1px 5px;border-radius:9999px;font-weight:600;flex-shrink:0}
+.risk-low{background:rgba(48,209,88,.12);color:var(--ok)}
+.risk-med{background:rgba(255,159,10,.12);color:var(--warn)}
+.risk-high{background:rgba(255,69,58,.12);color:var(--err)}
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--bg-2);border-radius:11px;transition:.25s;border:1px solid var(--bdr)}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.25s;box-shadow:var(--sh1)}
+.toggle input:checked~.toggle-knob{left:20px}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .hdr-c{display:none}
+  .chat-scroll{padding:14px}
+  .input-bar{padding:10px 14px 14px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ═══ COPY BUTTON ═══ */
+.msg-body{position:relative}
+.msg-copy{position:absolute;top:4px;right:4px;opacity:0;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;padding:3px 7px;font-size:.65rem;color:var(--t2);cursor:pointer;transition:all .15s;z-index:2}
+.msg-body:hover .msg-copy{opacity:1}
+.msg-copy:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ═══ INPUT DISABLED ═══ */
+.input-box.disabled{opacity:.5;pointer-events:none}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="hdr-l">
+      <div class="logo"><div class="logo-i">易</div><span>YI-Agent</span></div>
+      <span style="font-size:.68rem;color:var(--t3);font-weight:500">v4.0</span>
+    </div>
+    <div class="hdr-c">
+      <button class="nav-btn on" data-nav="chat" onclick="switchView('chat',this)">💬 对话</button>
+      <button class="nav-btn" data-nav="tools" onclick="switchView('tools',this)">🔧 工具</button>
+      <button class="nav-btn" data-nav="skills" onclick="switchView('skills',this)">🎯 技能</button>
+      <button class="nav-btn" data-nav="memory" onclick="switchView('memory',this)">🧠 记忆</button>
+      <button class="nav-btn" data-nav="permissions" onclick="switchView('permissions',this)">🛡️ 权限</button>
+      <button class="nav-btn" data-nav="about" onclick="switchView('about',this)">ℹ️</button>
+    </div>
+    <div class="hdr-r">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-txt" id="statusTxt">检测中...</span>
+      </div>
+      <div class="dd-anchor">
+        <button class="ibtn" onclick="toggleDD('settingsDD')" title="设置">⚙️</button>
+        <div class="dd" id="settingsDD">
+          <div class="dd-hdr"><div class="dd-title">设置</div></div>
+          <div class="dd-sec">
+            <div class="dd-label">🔑 API 配置</div>
+            <div class="cfg-field"><div class="cfg-label">API Key</div><input type="password" class="cfg-input" id="cfgKey" placeholder="sk-..."></div>
+            <div class="cfg-field"><div class="cfg-label">API 地址（可选）</div><input type="text" class="cfg-input" id="cfgBase" placeholder="留空用默认"></div>
+            <div class="cfg-field"><div class="cfg-label">模型</div>
+              <select class="cfg-sel" id="cfgModel" onchange="onModelChange(this.value)">
+                <option value="deepseek-chat">DeepSeek</option>
+                <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+                <option value="moonshot-v1-8k">Kimi (Moonshot)</option>
+                <option value="qwen-turbo">通义千问 (Qwen)</option>
+                <option value="glm-4-flash">智谱 GLM-4</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+              </select>
+            </div>
+            <div class="cfg-field" style="display:flex;gap:5px">
+              <button class="btn-primary" style="flex:1" onclick="saveConfig()">💾 保存</button>
+              <button class="btn-ghost" onclick="testConn()">🔗 测试</button>
+            </div>
+          </div>
+          <div class="dd-sec">
+            <div class="dd-label">🎨 主题</div>
+            <div class="theme-grid">
+              <button class="theme-btn" data-t="light" onclick="setTheme('light')"><div class="theme-dot" style="background:linear-gradient(135deg,#fff,#f5f5f7)"></div><span class="theme-lbl">晨光</span></button>
+              <button class="theme-btn on" data-t="dark" onclick="setTheme('dark')"><div class="theme-dot" style="background:linear-gradient(135deg,#141416,#1c1c1e)"></div><span class="theme-lbl">星夜</span></button>
+              <button class="theme-btn" data-t="ocean" onclick="setTheme('ocean')"><div class="theme-dot" style="background:linear-gradient(135deg,#0f1d2e,#1a3a5c)"></div><span class="theme-lbl">深海</span></button>
+              <button class="theme-btn" data-t="lavender" onclick="setTheme('lavender')"><div class="theme-dot" style="background:linear-gradient(135deg,#faf8fc,#e0d4f0)"></div><span class="theme-lbl">薰衣</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="ibtn" onclick="clearChat()" title="清空">🗑️</button>
+    </div>
+  </header>
+
+  <!-- BANNER (hidden by default, only shows on actual failure) -->
+  <div class="banner" id="banner" onclick="retryBackend()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <button class="sb-btn on" data-sb="chat" onclick="switchView('chat',this)" title="对话">💬<span class="badge" id="chatBadge" style="display:none"></span></button>
+      <button class="sb-btn" data-sb="tools" onclick="switchView('tools',this)" title="工具">🔧</button>
+      <button class="sb-btn" data-sb="skills" onclick="switchView('skills',this)" title="技能">🎯</button>
+      <button class="sb-btn" data-sb="memory" onclick="switchView('memory',this)" title="记忆">🧠</button>
+      <button class="sb-btn" data-sb="permissions" onclick="switchView('permissions',this)" title="权限">🛡️</button>
+    </div>
+    <div class="sb-spacer"></div>
+    <div class="sb-bottom">
+      <button class="sb-btn" data-sb="about" onclick="switchView('about',this)" title="关于">ℹ️</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- CHAT VIEW -->
+    <div class="content-view on" id="view-chat">
+      <div class="chat-scroll" id="chatArea">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">易</div>
+          <h2>你好，我是 YI-Agent</h2>
+          <p>基于易经六十四卦的工具索引智能体。<br>用卦象缩小搜索空间，让 LLM 精准调用工具。</p>
+          <div class="hints">
+            <div class="hint" onclick="quickAsk('帮我整理一下桌面文件')">📂 整理桌面</div>
+            <div class="hint" onclick="quickAsk('搜索一下最近AI领域有什么最新进展')">🔍 AI研究</div>
+            <div class="hint" onclick="quickAsk('帮我截个图看看当前屏幕')">📸 截图</div>
+            <div class="hint" onclick="quickAsk('找一下电脑里的PDF文件')">📄 搜索文件</div>
+            <div class="hint" onclick="quickAsk('帮我打开GitHub')">🌐 浏览</div>
+            <div class="hint" onclick="quickAsk('查看当前已加载的技能列表')">📋 技能</div>
+          </div>
+        </div>
+      </div>
+      <!-- STATS BAR -->
+      <div style="display:flex;align-items:center;gap:12px;padding:6px 28px;border-top:1px solid var(--bdr);background:var(--bg-0);font-size:.68rem;color:var(--t3);flex-wrap:wrap" id="statsBar">
+        <span>💬 <strong id="statRounds" style="color:var(--t1)">0</strong> 轮</span>
+        <span>🔧 <strong id="statTools" style="color:var(--t1)">0</strong> 工具</span>
+        <span>📊 <strong id="statTokens" style="color:var(--t1)">0</strong> tokens</span>
+        <span>💰 <strong id="statCost" style="color:var(--t1)">≈ ¥0</strong></span>
+        <span style="flex:1"></span>
+        <button class="btn-ghost" style="padding:2px 8px;font-size:.62rem" onclick="toggleLog()">📋 日志</button>
+      </div>
+      <div id="logPanel" style="display:none;max-height:120px;overflow-y:auto;padding:4px 28px;border-top:1px solid var(--bdr);background:var(--bg-0)">
+        <div class="log-entry"><span class="log-icon">💤</span><span class="log-text">等待指令...</span></div>
+      </div>
+      <div class="input-bar">
+        <div class="input-wrap">
+          <div class="input-box">
+            <textarea id="chatInput" rows="1" placeholder="对 YI-Agent 说点什么..." oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+            <button class="btn-send" onclick="sendMessage()" title="发送">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+            </button>
+          </div>
+          <div class="input-foot">
+            <div class="input-hint"><kbd>Enter</kbd> 发送 · <kbd>Shift+Enter</kbd> 换行</div>
+            <button class="model-pill" onclick="openSheet()" id="modelPill">
+              <span class="model-pill-dot" id="pillDot" style="background:#30d158"></span>
+              <span id="pillName">YI-Agent</span>
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLS VIEW -->
+    <div class="page-panel" id="view-tools">
+      <div class="page-scroll">
+        <div class="page-hdr">
+          <div><div class="page-title">🔧 工具管理</div><div class="page-sub" id="toolsStats">加载中...</div></div>
+          <div class="page-actions">
+            <input type="text" class="cfg-input" id="toolsSearch" placeholder="🔍 搜索..." style="width:180px" oninput="searchTools(this.value)">
+            <button class="btn-ghost" onclick="autoConfig()">🪄 自动配置</button>
+          </div>
+        </div>
+        <div id="toolsList"></div>
+      </div>
+    </div>
+
+    <!-- SKILLS VIEW -->
+    <div class="page-panel" id="view-skills">
+      <div class="page-scroll">
+        <div class="page-hdr">
+          <div><div class="page-title">🎯 技能管理</div><div class="page-sub" id="skillsStats">加载中...</div></div>
+          <div class="page-actions">
+            <button class="btn-ghost" onclick="toggleCreateSkill()">➕ 新建</button>
+          </div>
+        </div>
+        <div id="createSkillForm" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg-1);border:1px solid var(--bdr);border-radius:10px">
+          <div style="display:flex;gap:6px;align-items:end">
+            <div style="flex:1"><div class="cfg-label">名称</div><input type="text" class="cfg-input" id="newSkillName" placeholder="my-skill"></div>
+            <div style="flex:2"><div class="cfg-label">描述</div><input type="text" class="cfg-input" id="newSkillDesc" placeholder="用途"></div>
+            <button class="btn-primary" style="width:auto;padding:6px 16px" onclick="createSkill()">创建</button>
+            <button class="btn-ghost" onclick="toggleCreateSkill()">取消</button>
+          </div>
+        </div>
+        <div id="skillsList"></div>
+      </div>
+    </div>
+
+    <!-- MEMORY VIEW -->
+    <div class="page-panel" id="view-memory">
+      <div class="page-scroll">
+        <div class="page-hdr">
+          <div><div class="page-title">🧠 记忆管理</div><div class="page-sub" id="memStats">加载中...</div></div>
+          <div class="page-actions">
+            <input type="text" class="cfg-input" id="memSearch" placeholder="🔍 搜索..." style="width:200px" oninput="searchMem(this.value)">
+            <button class="btn-ghost" onclick="toggleCreateMem()">➕ 新建</button>
+          </div>
+        </div>
+        <div id="memSearchResults" style="display:none;margin-bottom:14px"></div>
+        <div id="createMemForm" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg-1);border:1px solid var(--bdr);border-radius:10px">
+          <div style="display:flex;gap:6px;align-items:end">
+            <div style="flex:1"><div class="cfg-label">文件名</div><input type="text" class="cfg-input" id="newMemName" placeholder="2026-05-06.md"></div>
+            <button class="btn-primary" style="width:auto;padding:6px 16px" onclick="createMem()">创建</button>
+            <button class="btn-ghost" onclick="toggleCreateMem()">取消</button>
+          </div>
+          <div style="margin-top:8px"><div class="cfg-label">内容</div><textarea id="newMemContent" style="width:100%;min-height:100px;padding:8px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.8rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)" placeholder="在此输入记忆内容..."></textarea></div>
+        </div>
+        <div class="card" style="cursor:pointer;margin-bottom:14px" onclick="toggleLT()">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:.85rem;font-weight:600">📋 MEMORY.md（长期记忆）</div>
+              <div style="font-size:.7rem;color:var(--t3);margin-top:1px">点击查看</div>
+            </div>
+          </div>
+          <div id="ltContent" style="display:none;margin-top:10px;padding:10px;background:var(--bg-2);border-radius:7px;font-size:.8rem;line-height:1.5;white-space:pre-wrap;max-height:350px;overflow-y:auto"></div>
+        </div>
+        <div id="memList"></div>
+      </div>
+    </div>
+
+    <!-- PERMISSIONS VIEW (黑白名单) -->
+    <div class="page-panel" id="view-permissions">
+      <div class="page-scroll">
+        <div class="page-hdr">
+          <div><div class="page-title">🛡️ 权限管理</div><div class="page-sub">设置工具和技能的黑白名单，控制 Agent 的行为边界</div></div>
+          <div class="page-actions">
+            <button class="btn-ghost" onclick="loadPermissions()">🔄 刷新</button>
+            <button class="btn-primary" style="width:auto;padding:6px 16px" onclick="savePermissions()">💾 保存</button>
+          </div>
+        </div>
+
+        <!-- 工具黑白名单 -->
+        <div style="margin-bottom:24px">
+          <div style="font-size:.9rem;font-weight:600;margin-bottom:12px">🔧 工具权限</div>
+          <div style="display:flex;gap:16px;margin-bottom:12px">
+            <div style="flex:1">
+              <div class="card">
+                <div style="font-size:.78rem;font-weight:600;color:var(--ok);margin-bottom:8px">✅ 白名单（允许使用）</div>
+                <textarea id="toolWhitelist" style="width:100%;min-height:120px;padding:8px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.78rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)" placeholder="每行一个工具名，如：&#10;web_search&#10;ab_open&#10;run_command&#10;&#10;留空表示允许所有工具"></textarea>
+                <div style="font-size:.65rem;color:var(--t3);margin-top:4px">留空 = 允许所有可用工具</div>
+              </div>
+            </div>
+            <div style="flex:1">
+              <div class="card">
+                <div style="font-size:.78rem;font-weight:600;color:var(--err);margin-bottom:8px">🚫 黑名单（禁止使用）</div>
+                <textarea id="toolBlacklist" style="width:100%;min-height:120px;padding:8px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.78rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)" placeholder="每行一个工具名，如：&#10;run_command&#10;ab_click&#10;&#10;黑名单优先级高于白名单"></textarea>
+                <div style="font-size:.65rem;color:var(--t3);margin-top:4px">黑名单优先级高于白名单</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 技能黑白名单 -->
+        <div style="margin-bottom:24px">
+          <div style="font-size:.9rem;font-weight:600;margin-bottom:8px">🎯 技能权限</div>
+          <div style="display:flex;gap:16px;margin-bottom:12px">
+            <div style="flex:1">
+              <div class="card">
+                <div style="font-size:.78rem;font-weight:600;color:var(--ok);margin-bottom:8px">✅ 白名单（允许触发）</div>
+                <textarea id="skillWhitelist" style="width:100%;min-height:80px;padding:8px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.78rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)" placeholder="每行一个技能名，如：&#10;web-research&#10;file-search&#10;&#10;留空表示允许所有技能"></textarea>
+              </div>
+            </div>
+            <div style="flex:1">
+              <div class="card">
+                <div style="font-size:.78rem;font-weight:600;color:var(--err);margin-bottom:8px">🚫 黑名单（禁止触发）</div>
+                <textarea id="skillBlacklist" style="width:100%;min-height:80px;padding:8px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.78rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)" placeholder="每行一个技能名&#10;黑名单优先级高于白名单"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 风险等级控制 -->
+        <div style="margin-bottom:24px">
+          <div style="font-size:.9rem;font-weight:600;margin-bottom:8px">⚡ 风险控制</div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="flex:1">
+                <div style="font-size:.78rem;font-weight:600">最大风险容忍度</div>
+                <div style="font-size:.68rem;color:var(--t3);margin-top:2px">低于此风险等级的工具将被自动拦截</div>
+              </div>
+              <select class="cfg-sel" id="riskTolerance" style="width:150px">
+                <option value="1.0">🟢 允许所有</option>
+                <option value="0.8">🟡 拦截高风险</option>
+                <option value="0.5">🟠 仅中低风险</option>
+                <option value="0.2">🔴 仅低风险</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 预设方案 -->
+        <div>
+          <div style="font-size:.9rem;font-weight:600;margin-bottom:8px">📋 预设方案</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost" onclick="applyPreset('strict')">🔒 严格模式</button>
+            <button class="btn-ghost" onclick="applyPreset('balanced')">⚖️ 平衡模式</button>
+            <button class="btn-ghost" onclick="applyPreset('open')">🔓 开放模式</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT VIEW -->
+    <div class="page-panel" id="view-about">
+      <div class="page-scroll" style="max-width:640px;margin:0 auto">
+        <div style="text-align:center;margin-bottom:36px">
+          <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--accent),#5856d6);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;margin:0 auto 16px;box-shadow:var(--sh-glow)">易</div>
+          <h1 style="font-size:1.8rem;font-weight:700;letter-spacing:-.03em;margin-bottom:6px">YI-Agent</h1>
+          <p style="font-size:.95rem;color:var(--t2);line-height:1.5">易经驱动的工具索引智能体 v4.0</p>
+          <p style="font-size:.82rem;color:var(--t3);margin-top:3px">六十四卦 × 三维向量 → 精准工具选择</p>
+        </div>
+
+        <!-- 核心理念 -->
+        <div style="margin-bottom:28px;padding:16px;background:var(--bg-1);border:1px solid var(--bdr);border-radius:12px">
+          <div style="font-size:.88rem;font-weight:600;margin-bottom:10px">💡 核心理念</div>
+          <div style="font-size:.78rem;color:var(--t2);line-height:1.7">
+            LLM 面对 50+ 工具时选择困难。YI-Agent 用<strong>三维向量（资源/进展/完成度）</strong>映射到<strong>六十四卦</strong>，将工具搜索空间从 50+ 压缩到 3-5 个候选。<br><br>
+            卦象是<strong>「参谋不是司令」</strong>——生成参考提示，LLM 仍有最终决策权。SQLite 存储「卦象 × 工具」历史成功率，越用越准。
+          </div>
+        </div>
+
+        <!-- 架构模块 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px">
+          <div class="card"><div class="card-label">☯️ 易经引擎</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">大衍筮法六爻十八变，三维向量→卦象→工具候选</div></div>
+          <div class="card"><div class="card-label">🔧 工具注册表</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">58 个工具，自动发现，动态 Schema，降级链</div></div>
+          <div class="card"><div class="card-label">🧠 意图路由</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">BM25 + LLM 精排，分类→匹配→执行→沉淀</div></div>
+          <div class="card"><div class="card-label">🎯 技能系统</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">首次走分解流程，二次极速执行，TTL 暂存</div></div>
+          <div class="card"><div class="card-label">🌐 浏览器自动化</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">Playwright 驱动，操作后自动返回页面上下文</div></div>
+          <div class="card"><div class="card-label">📊 执行日志</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">全链路打点，工具效果评估，为进化提供数据</div></div>
+          <div class="card"><div class="card-label">🔒 安全模块</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">文件系统守卫 + 命令拦截 + 敏感文件保护</div></div>
+          <div class="card"><div class="card-label">🔄 Git 工具链</div><div style="font-size:.78rem;color:var(--t2);margin-top:3px">改代码→测试→提交→推送，测试门禁防误推</div></div>
+        </div>
+
+        <!-- 技术栈 -->
+        <div style="margin-bottom:28px">
+          <div style="font-size:.88rem;font-weight:600;margin-bottom:10px">🛠️ 技术栈</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">Python 3.10+</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">DeepSeek API</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">Flask</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">Playwright</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">GitPython</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">SQLite</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">Streamlit</span>
+            <span style="padding:4px 10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:6px;font-size:.72rem;color:var(--t2)">jieba</span>
+          </div>
+        </div>
+
+        <!-- 启动方式 -->
+        <div style="margin-bottom:28px;padding:14px;background:var(--bg-1);border:1px solid var(--bdr);border-radius:12px">
+          <div style="font-size:.88rem;font-weight:600;margin-bottom:8px">🚀 启动方式</div>
+          <div style="font-size:.78rem;color:var(--t2);line-height:1.7">
+            双击运行 <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px;font-family:monospace">启动.py</code>，自动完成：<br>
+            &nbsp;&nbsp;1️⃣ 检测 Python 环境<br>
+            &nbsp;&nbsp;2️⃣ 创建虚拟环境<br>
+            &nbsp;&nbsp;3️⃣ 安装所有依赖（含 pytest、Playwright、GitPython）<br>
+            &nbsp;&nbsp;4️⃣ 环境检查 → 进入菜单选择模式
+          </div>
+        </div>
+
+        <!-- 未来方向 -->
+        <div style="margin-bottom:28px;padding:14px;background:var(--accent-bg);border:1px solid var(--bdr-a);border-radius:12px">
+          <div style="font-size:.88rem;font-weight:600;margin-bottom:8px">🔮 未来方向</div>
+          <div style="font-size:.78rem;color:var(--t2);line-height:1.7">
+            让 Agent <strong>自我升级</strong>：浏览网页 → 下载代码 → 读写修改 → 跑测试 → 推 GitHub。<br><br>
+            三个瓶颈按优先级：<br>
+            &nbsp;&nbsp;1. 浏览器反馈可靠性 ← 已基本解决<br>
+            &nbsp;&nbsp;2. LLM 判断力 → 用测试结果代替 LLM 自评<br>
+            &nbsp;&nbsp;3. 安全性 → 测试通过门禁，不需要全开安全层
+          </div>
+        </div>
+
+        <div style="text-align:center"><button class="hint" onclick="switchView('chat')">← 返回对话</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODEL SHEET -->
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet(event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">选择模型</div>
+    <div id="sheetList"></div>
+  </div>
+</div>
+
+<script>
+// ═══ MODEL REGISTRY ═══
+const MODELS = {
+  'deepseek-chat':              {provider:'DeepSeek',        name:'DeepSeek',              hint:'中文写作与代码能力强',       color:'#30d158',tier:'free', base:'https://api.deepseek.com',ep:'/chat/completions'},
+  'deepseek-v4-pro':            {provider:'DeepSeek',        name:'DeepSeek V4 Pro',       hint:'推理能力更强',               color:'#30d158',tier:'pro',  base:'https://api.deepseek.com',ep:'/chat/completions'},
+  'deepseek-reasoner':          {provider:'DeepSeek',        name:'DeepSeek Reasoner',     hint:'深度推理 · 复杂问题首选',    color:'#30d158',tier:'pro',  base:'https://api.deepseek.com',ep:'/chat/completions'},
+  'moonshot-v1-8k':             {provider:'Moonshot',        name:'Kimi (Moonshot)',        hint:'超长上下文 · 阅读理解',       color:'#0ea5e9',tier:'pro',  base:'https://api.moonshot.cn/v1',ep:'/chat/completions'},
+  'qwen-turbo':                 {provider:'阿里云',          name:'通义千问 (Qwen)',         hint:'阿里云 · 中文理解优秀',      color:'#0071e3',tier:'pro',  base:'https://dashscope.aliyuncs.com/compatible-mode/v1',ep:'/chat/completions'},
+  'glm-4-flash':                {provider:'智谱AI',          name:'智谱 GLM-4',            hint:'知识问答 · 性价比高',        color:'#5856d6',tier:'pro',  base:'https://open.bigmodel.cn/api/paas/v4',ep:'/chat/completions'},
+  'gpt-4o':                     {provider:'OpenAI',          name:'GPT-4o',                hint:'OpenAI 旗舰 · 最强推理',    color:'#e8453c',tier:'pro',  base:'https://api.openai.com/v1',ep:'/chat/completions'},
+  'gpt-4o-mini':                {provider:'OpenAI',          name:'GPT-4o Mini',           hint:'速度快 · 成本低',            color:'#e8453c',tier:'pro',  base:'https://api.openai.com/v1',ep:'/chat/completions'},
+  'claude-3-5-sonnet-20241022': {provider:'Anthropic',       name:'Claude 3.5 Sonnet',     hint:'长文本与代码能力最强',       color:'#ff9f0a',tier:'pro',  base:'https://api.anthropic.com/v1',ep:'/messages',claude:true},
+};
+
+// ═══ 模型配置检测 ═══
+function isModelConfigured(modelId){
+  const m=MODELS[modelId]; if(!m) return false;
+  // 免费模型不需要 key
+  if(m.tier==='free') return true;
+  // 检查是否有该 provider 的专属 key
+  const providerKeys=S.cfg.providerKeys||{};
+  if(providerKeys[m.provider]&&providerKeys[m.provider].trim()) return true;
+  // 如果当前选中的模型就是这个，且有全局 key，也算已配置
+  if(modelId===S.cfg.model&&S.cfg.apiKey&&S.cfg.apiKey.trim()) return true;
+  return false;
+}
+
+// ═══ STATE ═══
+const S = {
+  msgs:[], thinking:false,
+  rounds:0, tools:0, tokens:0, cost:0,
+  logs:[], cfg:{apiKey:'',baseUrl:'',model:'deepseek-chat'},
+  backendOk:false,       // 后端连接状态
+  sessionId: 'web-' + Date.now(),  // 固定会话 ID（修复：前后端同步）
+  reconnectTimer: null,  // 自动重连定时器
+  _searchTimers: {},     // 防抖定时器
+};
+
+// ═══ CONFIG ═══
+function loadCfg(){
+  try{const s=localStorage.getItem('yi_cfg');if(s)Object.assign(S.cfg,JSON.parse(s))}catch(e){}
+  document.getElementById('cfgKey').value=S.cfg.apiKey;
+  // 自动填充 API 地址：如果本地没有存过 baseUrl，用模型默认值
+  if(!S.cfg.baseUrl){
+    const m=MODELS[S.cfg.model];
+    if(m) S.cfg.baseUrl=m.base;
+  }
+  document.getElementById('cfgBase').value=S.cfg.baseUrl||'';
+  document.getElementById('cfgModel').value=S.cfg.model;
+  updatePill();
+  // 修复：从后端加载配置（如果后端可用）
+  loadBackendSettings();
+}
+async function loadBackendSettings(){
+  if(!S.backendOk) return;
+  try{
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    if(d.success && d.settings.apiKeySet && !S.cfg.apiKey){
+      // 后端有 key 但前端没有，提示用户
+      addLog('ℹ️', '后端已配置 API Key（' + d.settings.apiKey + '），前端可直接使用');
+    }
+  }catch(e){}
+}
+function saveConfig(){
+  S.cfg.model=document.getElementById('cfgModel').value;
+  S.cfg.apiKey=document.getElementById('cfgKey').value.trim();
+  S.cfg.baseUrl=document.getElementById('cfgBase').value.trim();
+  // 按 provider 存储 key（支持多模型独立配置）
+  if(!S.cfg.providerKeys) S.cfg.providerKeys={};
+  const m=MODELS[S.cfg.model];
+  if(m&&S.cfg.apiKey) S.cfg.providerKeys[m.provider]=S.cfg.apiKey;
+  localStorage.setItem('yi_cfg',JSON.stringify(S.cfg));
+  updatePill(); closeDD();
+  // 热加载：同步保存到后端，立即生效无需重启
+  if(S.backendOk){
+    fetch('/api/settings',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        apiKey:S.cfg.apiKey,
+        baseUrl:S.cfg.baseUrl,
+        model:S.cfg.model,
+        providerKeys:S.cfg.providerKeys
+      })
+    }).then(r=>r.json()).then(d=>{
+      if(d.success) addLog('✅','配置已保存并热加载（无需重启）');
+      else addLog('⚠️','前端已保存，后端同步失败: '+d.error);
+    }).catch(()=>addLog('✅','前端已保存，后端未同步'));
+  } else {
+    addLog('✅','配置已保存（仅前端，后端未连接）');
+  }
+}
+function updatePill(){
+  const m=MODELS[S.cfg.model]||MODELS['deepseek-chat'];
+  document.getElementById('pillName').textContent=m.provider+' · '+m.name;
+  document.getElementById('pillDot').style.background=m.color;
+}
+function apiUrl(){
+  const m=MODELS[S.cfg.model]; if(!m)return '';
+  return(S.cfg.baseUrl||m.base)+m.ep;
+}
+// ═══ 模型切换自动填充 API 地址 ═══
+function onModelChange(id){
+  const m=MODELS[id];
+  if(m) document.getElementById('cfgBase').value=m.base;
+}
+
+// ═══ BACKEND STATUS ═══
+function setBackendStatus(ok, msg){
+  S.backendOk = ok;
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusTxt');
+  const banner = document.getElementById('banner');
+
+  dot.className = 'status-dot ' + (ok ? 'ok' : 'err');
+  txt.textContent = ok ? '已连接' : '未连接';
+
+  if(ok){
+    banner.className = 'banner';  // hide
+    banner.textContent = '';
+  } else {
+    banner.className = 'banner show err';
+    banner.textContent = '⚠️ ' + (msg || '后端未连接') + ' — 点击重试';
+    addLog('⚠️', msg || '后端未连接');
+  }
+}
+
+async function checkBackend(){
+  try{
+    const r = await fetch('/api/status', {signal: AbortSignal.timeout(5000)});
+    if(r.ok){
+      const d = await r.json();
+      if(d.status === 'ok'){
+        setBackendStatus(true);
+        addLog('✅', '已连接后端 · ' + (d.tool_stats?.available||0) + ' 个工具就绪');
+        return true;
+      }
+    }
+    setBackendStatus(false, '后端返回异常 (HTTP ' + r.status + ')');
+    return false;
+  }catch(e){
+    setBackendStatus(false, '无法连接后端 (' + (e.message||'网络错误') + ')');
+    return false;
+  }
+}
+
+async function retryBackend(){
+  const banner = document.getElementById('banner');
+  banner.className = 'banner show warn';
+  banner.textContent = '🔄 正在重新连接...';
+  addLog('🔄', '正在重试连接后端...');
+  const ok = await checkBackend();
+  if(ok){
+    addLog('✅', '后端已恢复连接');
+  }
+}
+
+// 修复：自动重连机制
+function startAutoReconnect(){
+  if(S.reconnectTimer) return;
+  S.reconnectTimer = setInterval(async ()=>{
+    if(!S.backendOk){
+      const ok = await checkBackend();
+      if(ok){
+        clearInterval(S.reconnectTimer);
+        S.reconnectTimer = null;
+        addLog('✅', '后端自动重连成功');
+      }
+    }
+  }, 10000); // 每 10 秒检测一次
+}
+
+// ═══ MODEL SHEET ═══
+function openSheet(){
+  const el=document.getElementById('sheetList');
+  el.innerHTML=Object.entries(MODELS).map(([id,m])=>{
+    const on=id===S.cfg.model?'on':'';
+    // 根据实际配置状态显示标签
+    let badge='';
+    if(m.tier==='free'){
+      badge='<span class="sheet-badge free">免费</span>';
+    } else if(isModelConfigured(id)){
+      badge='<span class="sheet-badge free">已配置</span>';
+    } else {
+      badge='<span class="sheet-badge pro">需配置</span>';
+    }
+    return`<button class="sheet-item ${on}" onclick="pickModel('${id}')"><div class="sheet-dot" style="background:${m.color}"></div><div class="sheet-info"><div class="sheet-name">${m.provider} · ${m.name}</div><div class="sheet-hint">${m.hint}</div></div>${badge}<div class="sheet-chk"></div></button>`;
+  }).join('');
+  document.getElementById('sheetBg').classList.add('show');
+}
+function closeSheet(e){if(e.target===e.currentTarget)document.getElementById('sheetBg').classList.remove('show')}
+function pickModel(id){
+  S.cfg.model=id; localStorage.setItem('yi_cfg',JSON.stringify(S.cfg));
+  document.getElementById('cfgModel').value=id; updatePill();
+  // 自动填充 API 地址
+  const m=MODELS[id];
+  if(m&&!S.cfg.baseUrl){
+    document.getElementById('cfgBase').value=m.base;
+  }
+  document.getElementById('sheetBg').classList.remove('show');
+  addLog('🔄','切换模型: '+(MODELS[id]?.name||id));
+}
+
+// ═══ THEME ═══
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('yi_theme',t);
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+}
+// 修复：主题初始化移到 INIT 区域，避免重复执行
+
+// ═══ DROPDOWN ═══
+function toggleDD(id){const el=document.getElementById(id);const open=el.classList.contains('show');closeDD();if(!open)el.classList.add('show')}
+function closeDD(){document.querySelectorAll('.dd').forEach(d=>d.classList.remove('show'))}
+document.addEventListener('click',e=>{if(!e.target.closest('.dd-anchor'))closeDD()});
+
+// ═══ VIEW SWITCHING ═══
+function switchView(view,btn){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('on',b.dataset.nav===view));
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.toggle('on',b.dataset.sb===view));
+  document.querySelectorAll('.content-view,.page-panel').forEach(v=>v.classList.remove('on'));
+  const target=document.getElementById('view-'+view);
+  if(target)target.classList.add('on');
+  if(view==='tools')loadToolsPage();
+  if(view==='skills')loadSkillsPage();
+  if(view==='memory')loadMemPage();
+  if(view==='permissions')loadPermissions();
+}
+
+// ═══ INPUT ═══
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px'}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+function quickAsk(t){document.getElementById('chatInput').value=t;sendMessage()}
+
+// ═══ MESSAGES ═══
+function hideWelcome(){const w=document.getElementById('welcome');if(w)w.remove()}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function fmtText(t){
+  if(!t)return '';
+  // 安全处理：先转义 HTML，再用白名单方式处理 markdown
+  let s=esc(t);
+  // **粗体** — 只匹配字母数字和中文，防止注入
+  s=s.replace(/\*\*([\u4e00-\u9fa5a-zA-Z0-9\s,，。！!?？、：:;；\-_]+?)\*\*/g,'<strong>$1</strong>');
+  // `代码` — 只匹配不含尖括号的内容
+  s=s.replace(/`([^`<]+)`/g,'<code style="background:var(--bg-2);padding:1px 4px;border-radius:3px;font-size:.8em;font-family:SF Mono,Fira Code,monospace">$1</code>');
+  // URL 链接 — esc 后的 URL 不含 < >，安全
+  s=s.replace(/(https?:\/\/[^\s<&]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">$1</a>');
+  s=s.replace(/\n/g,'<br>');
+  return s;
+}
+
+// ═══ 消息持久化 ═══
+const MSG_STORAGE_KEY='yi_messages';
+function saveMessages(){
+  try{localStorage.setItem(MSG_STORAGE_KEY,JSON.stringify(S.msgs.slice(-200)))}catch(e){}
+}
+function loadMessages(){
+  try{
+    const s=localStorage.getItem(MSG_STORAGE_KEY);
+    if(!s)return;
+    const msgs=JSON.parse(s);
+    if(!Array.isArray(msgs)||!msgs.length)return;
+    S.msgs=msgs;
+    // 重渲染
+    const area=document.getElementById('chatArea');
+    area.innerHTML='';
+    msgs.forEach(m=>{
+      if(m.role==='user') addMsg('user',m.content);
+      else addMsg('bot',m.content,m._meta||{});
+    });
+  }catch(e){}
+}
+
+function addMsg(role,text,meta={}){
+  hideWelcome();
+  const area=document.getElementById('chatArea');
+  const time=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  const d=document.createElement('div');d.className='msg '+role;
+  if(role==='user'){
+    d.innerHTML=`<div class="msg-av">U</div><div class="msg-body"><div class="msg-text">${esc(text)}</div><div class="msg-meta"><span>${time}</span></div></div>`;
+  }else{
+    // 工具调用：折叠显示，只显示数量摘要
+    let tc='';if(meta.toolCalls?.length){
+      const count=meta.toolCalls.length;const errs=meta.toolCalls.filter(c=>c.error).length;
+      const summary=errs>0?`${count} 次调用（${errs} 次失败）`:`${count} 次工具调用`;
+      tc=`<details class="tool-box"><summary class="tool-summary">⚙️ ${summary}</summary>${meta.toolCalls.map(c=>`<div class="tool-item"><span>${c.error?'❌':'✅'}</span><span class="tool-name">${esc(c.tool||'?')}</span><span class="tool-time">${c.elapsed_ms||0}ms</span></div>`).join('')}</details>`
+    }
+    // 进度信息：折叠
+    let pg='';if(meta.progress?.length){pg=`<details class="progress-box"><summary>📋 过程日志（${meta.progress.length} 条）</summary><div class="progress-inner">${meta.progress.map(esc).join('<br>')}</div></details>`}
+    // 标签：只显示 token 数
+    let tag='';if(meta.stats?.total_tokens>0){tag=`<span class="msg-tag">${meta.stats.total_tokens} tokens</span>`}
+    d.innerHTML=`<div class="msg-av">易</div><div class="msg-body"><button class="msg-copy" onclick="copyMsg(this)" title="复制">📋</button>${pg}<div class="msg-text">${fmtText(text)}</div>${tc}<div class="msg-meta"><span>${time}</span>${tag}</div></div>`;
+  }
+  area.appendChild(d);area.scrollTop=area.scrollHeight;
+}
+function copyMsg(btn){
+  const body=btn.closest('.msg-body');
+  const text=body.querySelector('.msg-text').innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✅';setTimeout(()=>btn.textContent='📋',1500);
+  }).catch(()=>{});
+}
+
+function showThinking(){hideWelcome();const a=document.getElementById('chatArea');const d=document.createElement('div');d.className='thinking';d.id='thk';d.innerHTML=`<div class="msg-av" style="width:26px;height:26px;background:linear-gradient(135deg,#5856d6,#af52de);color:#fff;font-size:11px;border-radius:7px">易</div><div class="tdots"><span></span><span></span><span></span></div><span style="font-size:.78rem;color:var(--t3)">思考中...</span>`;a.appendChild(d);a.scrollTop=a.scrollHeight}
+function hideThinking(){const e=document.getElementById('thk');if(e)e.remove()}
+
+// ═══ 输入框状态控制 ═══
+function setInputEnabled(enabled){
+  const inp=document.getElementById('chatInput');
+  const box=inp.closest('.input-box');
+  const btn=box.querySelector('.btn-send');
+  if(enabled){
+    box.classList.remove('disabled');inp.disabled=false;btn.disabled=false;
+  }else{
+    box.classList.add('disabled');inp.disabled=true;btn.disabled=true;
+  }
+}
+
+// ═══ SEND ═══
+async function sendMessage(){
+  const inp=document.getElementById('chatInput');const txt=inp.value.trim();if(!txt||S.thinking)return;
+  if(txt.length > 20000){addMsg('bot','⚠️ 消息过长（最多 20000 字符）');return}
+  inp.value='';inp.style.height='auto';S.thinking=true;setInputEnabled(false);
+  addMsg('user',txt);saveMessages();showThinking();setStatus('thinking','思考中...');
+  try{
+    const r=await callAgent(txt);hideThinking();S.thinking=false;setInputEnabled(true);
+    const meta={toolCalls:r.tool_calls||[],stats:r.stats||{},progress:r._progress||[]};
+    addMsg('bot',r.response||'(无回复)',meta);
+    // 持久化：保存 meta 到最后一条 bot 消息
+    if(S.msgs.length>0){S.msgs[S.msgs.length-1]._meta=meta}
+    saveMessages();
+    if(r.stats){S.rounds+=r.stats.rounds||0;S.tools+=r.stats.tool_calls_count||0;S.tokens+=r.stats.total_tokens||0;S.cost+=r.stats.estimated_cost_cny||0;updStats()}
+    if(r.tool_calls)r.tool_calls.forEach(c=>addLog(c.error?'❌':'✅',`${c.tool} (${c.elapsed_ms}ms)`));
+    setStatus('ready','就绪');
+  }catch(err){hideThinking();S.thinking=false;setInputEnabled(true);addMsg('bot','❌ '+err.message);saveMessages();setStatus('error','出错了');setTimeout(()=>setStatus('ready','就绪'),3000)}
+}
+
+// ═══ API ═══
+async function callAgent(msg){
+  // 优先走 Flask 后端（有工具能力）
+  if(S.backendOk){
+    try{
+      // 修复：使用固定 session_id，后端复用 Conversation
+      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,session_id:S.sessionId,permissions:JSON.parse(localStorage.getItem('yi_permissions')||'{}')}),signal:AbortSignal.timeout(180000)});
+      if(r.ok){
+        const data = await r.json();
+        // 修复：同步更新前端消息列表（后端是权威数据源）
+        S.msgs.push({role:'user',content:msg});
+        S.msgs.push({role:'assistant',content:data.response||''});
+        return data;
+      }
+      // 后端返回错误，标记为不可用
+      if(r.status >= 500){
+        setBackendStatus(false, '后端返回错误 (HTTP ' + r.status + ')');
+        startAutoReconnect();
+        throw new Error('后端返回错误 (HTTP ' + r.status + ')，请稍后重试');
+      }
+    }catch(e){
+      // 网络错误或超时，标记后端不可用
+      if(e.name === 'TimeoutError' || e.message?.includes('timeout')){
+        setBackendStatus(false, '后端响应超时');
+      } else if(!e.message?.includes('后端返回错误')){
+        setBackendStatus(false, '后端连接断开');
+      }
+      startAutoReconnect();
+      throw new Error('后端暂时不可用: ' + (e.message || '连接失败') + '。正在自动重连...');
+    }
+  }
+
+  // 后端不可用 → 直连 API（无工具能力，纯聊天）
+  if(!S.cfg.apiKey)throw new Error('后端未连接且未配置 API Key。请启动后端或在设置中配置 API Key。');
+  const m=MODELS[S.cfg.model];if(!m)throw new Error('不支持的模型');
+  const url=apiUrl();
+  const sys='你是 YI-Agent，一个基于易经六十四卦做工具索引的智能AI助手。你当前以纯聊天模式运行（后端服务暂时不可用），没有工具调用能力。如果用户要求执行文件操作、浏览器、命令执行等需要工具的任务，请告知用户后端服务需要启动才能使用这些功能，建议用户检查后端是否正常运行。不要说"后端未启动"，而是说"当前以纯聊天模式运行，工具功能暂时不可用"。';
+  if(m.claude){
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':S.cfg.apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:S.cfg.model,max_tokens:16384,temperature:0.3,system:sys,messages:[...S.msgs.slice(-10).map(x=>({role:x.role,content:x.content})),{role:'user',content:msg}]}),signal:AbortSignal.timeout(120000)});
+    if(!r.ok)throw new Error('API 错误 '+r.status);
+    const d=await r.json();const c=d.content?.[0]?.text||'(无回复)';const u=d.usage||{};
+    S.msgs.push({role:'user',content:msg});S.msgs.push({role:'assistant',content:c});
+    return{response:c,tool_calls:[],stats:{total_tokens:(u.input_tokens||0)+(u.output_tokens||0),prompt_tokens:u.input_tokens||0,completion_tokens:u.output_tokens||0,estimated_cost_cny:((u.input_tokens||0)*0.5+(u.output_tokens||0)*2)/1000000,rounds:1,tool_calls_count:0},_progress:['ℹ️ 纯聊天模式 · 后端自动重连中']};
+  }
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.cfg.apiKey},body:JSON.stringify({model:S.cfg.model,messages:[{role:'system',content:sys},...S.msgs.slice(-10).map(x=>({role:x.role,content:x.content})),{role:'user',content:msg}],temperature:0.3,max_tokens:16384}),signal:AbortSignal.timeout(120000)});
+  if(!r.ok){const e=await r.text().catch(()=>'');throw new Error('API 错误 '+r.status+': '+e.substring(0,100))}
+  const d=await r.json();const c=d.choices?.[0]?.message?.content||'(无回复)';const u=d.usage||{};
+  S.msgs.push({role:'user',content:msg});S.msgs.push({role:'assistant',content:c});
+  return{response:c,tool_calls:[],stats:{total_tokens:u.total_tokens||0,prompt_tokens:u.prompt_tokens||0,completion_tokens:u.completion_tokens||0,estimated_cost_cny:((u.prompt_tokens||0)*0.5+(u.completion_tokens||0)*2)/1000000,rounds:1,tool_calls_count:0},_progress:['ℹ️ 纯聊天模式 · 后端自动重连中']};
+}
+
+async function testConn(){
+  addLog('🔗','正在测试后端...');
+  const ok = await checkBackend();
+  if(ok){
+    if(S.cfg.apiKey){
+      addLog('🔗','后端已连接，测试 API Key...');
+      try{
+        const m=MODELS[S.cfg.model];const url=apiUrl();
+        const h={'Content-Type':'application/json','Authorization':'Bearer '+S.cfg.apiKey};
+        if(m.claude){h['x-api-key']=S.cfg.apiKey;h['anthropic-version']='2023-06-01';delete h.Authorization}
+        const b=m.claude?{model:S.cfg.model,max_tokens:10,messages:[{role:'user',content:'hi'}]}:{model:S.cfg.model,messages:[{role:'user',content:'hi'}],max_tokens:10};
+        const r=await fetch(url,{method:'POST',headers:h,body:JSON.stringify(b),signal:AbortSignal.timeout(15000)});
+        r.ok?addLog('✅','API Key 连接成功!'):addLog('❌','API HTTP '+r.status);
+      }catch(e){addLog('❌','API: '+e.message)}
+    }
+  }
+}
+
+// ═══ STATS & LOGS ═══
+function updStats(){
+  document.getElementById('statRounds').textContent=S.rounds;
+  document.getElementById('statTools').textContent=S.tools;
+  document.getElementById('statTokens').textContent=S.tokens>1000?(S.tokens/1000).toFixed(1)+'K':S.tokens;
+  document.getElementById('statCost').textContent='≈ ¥'+S.cost.toFixed(4);
+}
+function addLog(icon,text){
+  const panel=document.getElementById('logPanel');
+  if(!panel)return;
+  const now=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const waiting=panel.querySelector('.log-entry');
+  if(waiting&&waiting.textContent.includes('等待'))waiting.remove();
+  const d=document.createElement('div');d.className='log-entry';
+  d.innerHTML=`<span class="log-icon">${icon}</span><span class="log-text">${esc(text)}</span><span class="log-time">${now}</span>`;
+  panel.insertBefore(d,panel.firstChild);
+  while(panel.children.length>30)panel.removeChild(panel.lastChild);
+  // 持久化日志
+  try{
+    const logs=JSON.parse(sessionStorage.getItem('yi_logs')||'[]');
+    logs.unshift([icon,text]);
+    while(logs.length>30)logs.pop();
+    sessionStorage.setItem('yi_logs',JSON.stringify(logs));
+  }catch(e){}
+}
+function toggleLog(){const p=document.getElementById('logPanel');p.style.display=p.style.display==='none'?'block':'none'}
+function setStatus(t,txt){
+  // 修复：只在非 ready 状态时覆盖颜色，ready 状态由后端连接状态决定
+  const dot = document.getElementById('statusDot');
+  if(t === 'ready'){
+    dot.style.background = S.backendOk ? 'var(--ok)' : 'var(--err)';
+  } else {
+    dot.style.background = {thinking:'var(--warn)',error:'var(--err)'}[t]||'var(--t3)';
+  }
+  document.getElementById('statusTxt').textContent=txt;
+}
+
+// ═══ 防抖工具 ═══
+function debounce(key, fn, delay=300){
+  clearTimeout(S._searchTimers[key]);
+  S._searchTimers[key] = setTimeout(fn, delay);
+}
+
+// ═══ TOOLS PAGE ═══
+async function loadToolsPage(){
+  try{
+    const r=await fetch('/api/tools');const d=await r.json();
+    if(!d.success)return;
+    const all=Object.values(d.categories).flat();
+    document.getElementById('toolsStats').textContent=`${all.filter(t=>t.enabled).length}/${all.length} 可用`;
+    renderToolsCats(d.categories);
+  }catch(e){document.getElementById('toolsList').innerHTML='<p style="color:var(--t3)">⚠️ 无法加载，请确认后端已启动</p>'}
+}
+function renderToolsCats(cats){
+  document.getElementById('toolsList').innerHTML=Object.entries(cats).map(([cat,tools])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:.8rem;font-weight:600;color:var(--t2);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bdr)">📁 ${cat} (${tools.length})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px">${tools.map(t=>{
+        const rc={low:'risk-low',medium:'risk-med',high:'risk-high'}[t.risk_level]||'risk-low';
+        const rl={low:'低',medium:'中',high:'高'}[t.risk_level]||'?';
+        return`<div class="tcard"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span class="tcard-name">${t.name}</span>${t.manually_overridden?'⚡':''}<span class="risk-tag ${rc}">${rl}</span></div><div class="tcard-desc">${t.description||''}</div></div><label class="toggle"><input type="checkbox" ${t.enabled?'checked':''} onchange="toggleTool('${t.name}',this.checked)"><span class="toggle-track"></span><span class="toggle-knob"></span></label></div>`;
+      }).join('')}</div>
+    </div>
+  `).join('');
+}
+async function toggleTool(n,on){
+  try{
+    await fetch(`/api/tools/${n}/toggle`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:on})});
+    addLog(on?'✅':'❌', `${n} 已${on?'启用':'禁用'}`);
+    loadToolsPage();
+  }catch(e){
+    addLog('❌', `${n} 操作失败: ${e.message}`);
+  }
+}
+async function searchTools(kw){
+  if(!kw.trim()){loadToolsPage();return}
+  debounce('tools', async ()=>{
+    try{
+      const r=await fetch(`/api/tools/search?q=${encodeURIComponent(kw)}`);
+      const d=await r.json();
+      if(d.success){
+        document.getElementById('toolsList').innerHTML=`<div style="font-size:.78rem;color:var(--t3);margin-bottom:10px">"${esc(kw)}" — ${d.count} 个结果</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px">${d.tools.map(t=>`<div class="tcard"><div style="flex:1;min-width:0"><div class="tcard-name">${t.name}</div><div class="tcard-desc">${t.description||''}</div></div></div>`).join('')}</div>`;
+      }
+    }catch(e){}
+  });
+}
+async function autoConfig(){
+  try{
+    const r=await fetch('/api/tools/auto-configure',{method:'POST'});
+    const d=await r.json();
+    if(d.success){
+      if(d.suggest_disable && d.suggest_disable.length){
+        for(const n of d.suggest_disable){
+          await fetch(`/api/tools/${n}/toggle`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:false})});
+        }
+        addLog('🪄', `自动配置：已禁用 ${d.suggest_disable.length} 个工具`);
+      } else {
+        addLog('✅', '自动配置：无需调整');
+      }
+      loadToolsPage();
+    }
+  }catch(e){
+    addLog('❌', '自动配置失败: ' + e.message);
+  }
+}
+
+// ═══ SKILLS PAGE ═══
+async function loadSkillsPage(){
+  try{const r=await fetch('/api/skills');const d=await r.json();if(!d.success)return;
+    document.getElementById('skillsStats').textContent=d.count+' 个技能';
+    document.getElementById('skillsList').innerHTML=d.skills.map(s=>`
+      <div class="card"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.85rem;font-weight:600">📄 ${s.name}</div><div style="font-size:.72rem;color:var(--t3);margin-top:1px">${s.preview||''}</div><div style="font-size:.63rem;color:var(--t3);margin-top:3px">${(s.size/1024).toFixed(1)}KB · ${new Date(s.modified*1000).toLocaleDateString()}</div></div><div style="display:flex;gap:5px"><button class="btn-ghost" onclick="viewSkill('${s.name}')">👁️</button><button class="btn-ghost" onclick="editSkill('${s.name}')">✏️</button><button class="btn-ghost" style="color:var(--err);border-color:var(--err)" onclick="delSkill('${s.name}')">🗑️</button></div></div><div id="sc_${s.name}" style="display:none;margin-top:10px;padding:10px;background:var(--bg-2);border-radius:7px;font-size:.8rem;line-height:1.5;white-space:pre-wrap;max-height:350px;overflow-y:auto"></div><div id="se_${s.name}" style="display:none;margin-top:10px"><textarea id="sta_${s.name}" style="width:100%;min-height:200px;padding:10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.8rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button class="btn-primary" style="width:auto;padding:6px 16px" onclick="saveSkill('${s.name}')">💾 保存</button><button class="btn-ghost" onclick="cancelEditSkill('${s.name}')">取消</button></div></div></div>
+    `).join('');
+  }catch(e){document.getElementById('skillsList').innerHTML='<p style="color:var(--t3)">⚠️ 无法加载</p>'}
+}
+async function viewSkill(n){const el=document.getElementById('sc_'+n);if(el.style.display==='none'){try{const r=await fetch(`/api/skills/${n}`);const d=await r.json();if(d.success){el.textContent=d.content;el.style.display='block'}}catch(e){}}else el.style.display='none'}
+async function editSkill(n){
+  // 关闭查看面板，打开编辑面板
+  document.getElementById('sc_'+n).style.display='none';
+  const editEl=document.getElementById('se_'+n);
+  if(editEl.style.display==='none'){
+    try{
+      const r=await fetch(`/api/skills/${n}`);
+      const d=await r.json();
+      if(d.success){
+        document.getElementById('sta_'+n).value=d.content;
+        editEl.style.display='block';
+      }
+    }catch(e){addLog('❌','加载失败: '+e.message)}
+  } else {
+    editEl.style.display='none';
+  }
+}
+async function saveSkill(n){
+  const content=document.getElementById('sta_'+n).value;
+  if(!content.trim()){addLog('⚠️','内容不能为空');return}
+  try{
+    const r=await fetch(`/api/skills/${n}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});
+    const d=await r.json();
+    if(d.success){
+      addLog('✅',`技能 "${n}" 已保存`);
+      document.getElementById('se_'+n).style.display='none';
+      loadSkillsPage();
+    } else {
+      addLog('❌','保存失败: '+(d.error||'未知错误'));
+    }
+  }catch(e){addLog('❌','保存失败: '+e.message)}
+}
+function cancelEditSkill(n){document.getElementById('se_'+n).style.display='none'}
+function toggleCreateSkill(){const f=document.getElementById('createSkillForm');f.style.display=f.style.display==='none'?'block':'none'}
+async function createSkill(){
+  const n=document.getElementById('newSkillName').value.trim();
+  const desc=document.getElementById('newSkillDesc').value.trim();
+  if(!n){addLog('⚠️','技能名称不能为空');return}
+  // 修复：校验名称格式
+  if(/[^a-zA-Z0-9\-_]/.test(n)){addLog('⚠️','技能名称只能包含字母、数字、横线和下划线');return}
+  try{
+    const r=await fetch('/api/skills',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,description:desc})});
+    const d=await r.json();
+    if(d.success){
+      addLog('✅', `技能 "${n}" 已创建`);
+      document.getElementById('newSkillName').value='';
+      document.getElementById('newSkillDesc').value='';
+    } else {
+      addLog('❌', '创建失败: ' + (d.error||'未知错误'));
+    }
+    toggleCreateSkill();
+    loadSkillsPage();
+  }catch(e){addLog('❌','创建失败: '+e.message)}
+}
+async function delSkill(n){
+  if(!confirm('确定删除技能 '+n+'？此操作不可恢复。'))return;
+  try{
+    await fetch(`/api/skills/${n}`,{method:'DELETE'});
+    addLog('🗑️', `技能 "${n}" 已删除`);
+    loadSkillsPage();
+  }catch(e){addLog('❌','删除失败: '+e.message)}
+}
+
+// ═══ MEMORY PAGE ═══
+async function loadMemPage(){
+  try{const sr=await fetch('/api/memory/stats');const s=await sr.json();if(s.success)document.getElementById('memStats').textContent=`${s.daily_count} 条日记忆 · ${(s.total_size/1024).toFixed(1)}KB`;
+    const r=await fetch('/api/memory');const d=await r.json();if(d.success){
+      document.getElementById('memList').innerHTML=d.memories.map(m=>`
+        <div class="card"><div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:.85rem;font-weight:600">📝 ${m.name}</div><div style="font-size:.7rem;color:var(--t3);margin-top:1px">${m.preview||''}</div><div style="font-size:.63rem;color:var(--t3);margin-top:3px">${(m.size/1024).toFixed(1)}KB</div></div><div style="display:flex;gap:5px"><button class="btn-ghost" onclick="viewMem('${m.name}')">👁️</button><button class="btn-ghost" onclick="editMem('${m.name}')">✏️</button><button class="btn-ghost" style="color:var(--err);border-color:var(--err)" onclick="delMem('${m.name}')">🗑️</button></div></div><div id="mc_${m.name}" style="display:none;margin-top:10px;padding:10px;background:var(--bg-2);border-radius:7px;font-size:.8rem;line-height:1.5;white-space:pre-wrap;max-height:350px;overflow-y:auto"></div><div id="me_${m.name}" style="display:none;margin-top:10px"><textarea id="mta_${m.name}" style="width:100%;min-height:200px;padding:10px;background:var(--bg-2);border:1px solid var(--bdr);border-radius:7px;font-size:.8rem;line-height:1.5;font-family:monospace;resize:vertical;color:var(--t1)"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button class="btn-primary" style="width:auto;padding:6px 16px" onclick="saveMem('${m.name}')">💾 保存</button><button class="btn-ghost" onclick="cancelEditMem('${m.name}')">取消</button></div></div></div>
+      `).join('');
+    }
+  }catch(e){document.getElementById('memList').innerHTML='<p style="color:var(--t3)">⚠️ 无法加载</p>'}
+}
+async function toggleLT(){const el=document.getElementById('ltContent');if(el.style.display==='none'){try{const r=await fetch('/api/memory/MEMORY.md');const d=await r.json();if(d.success){el.textContent=d.content;el.style.display='block'}}catch(e){}}else el.style.display='none'}
+async function viewMem(n){const el=document.getElementById('mc_'+n);if(el.style.display==='none'){try{const r=await fetch(`/api/memory/${n}`);const d=await r.json();if(d.success){el.textContent=d.content;el.style.display='block'}}catch(e){}}else el.style.display='none'}
+async function editMem(n){
+  document.getElementById('mc_'+n).style.display='none';
+  const editEl=document.getElementById('me_'+n);
+  if(editEl.style.display==='none'){
+    try{
+      const r=await fetch(`/api/memory/${n}`);
+      const d=await r.json();
+      if(d.success){
+        document.getElementById('mta_'+n).value=d.content;
+        editEl.style.display='block';
+      }
+    }catch(e){addLog('❌','加载失败: '+e.message)}
+  } else {
+    editEl.style.display='none';
+  }
+}
+async function saveMem(n){
+  const content=document.getElementById('mta_'+n).value;
+  if(!content.trim()){addLog('⚠️','内容不能为空');return}
+  try{
+    const r=await fetch(`/api/memory/${n}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});
+    const d=await r.json();
+    if(d.success){
+      addLog('✅',`记忆 "${n}" 已保存`);
+      document.getElementById('me_'+n).style.display='none';
+      loadMemPage();
+    } else {
+      addLog('❌','保存失败: '+(d.error||'未知错误'));
+    }
+  }catch(e){addLog('❌','保存失败: '+e.message)}
+}
+function cancelEditMem(n){document.getElementById('me_'+n).style.display='none'}
+function toggleCreateMem(){const f=document.getElementById('createMemForm');f.style.display=f.style.display==='none'?'block':'none'}
+async function createMem(){
+  const n=document.getElementById('newMemName').value.trim();
+  const content=document.getElementById('newMemContent').value;
+  if(!n){addLog('⚠️','文件名不能为空');return}
+  if(!n.endsWith('.md')){addLog('⚠️','文件名必须以 .md 结尾');return}
+  if(/[/\\..]/.test(n)){addLog('⚠️','文件名不能包含路径分隔符或 ..');return}
+  try{
+    const r=await fetch('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:n,content})});
+    const d=await r.json();
+    if(d.success){
+      addLog('✅',`记忆 "${n}" 已创建`);
+      document.getElementById('newMemName').value='';
+      document.getElementById('newMemContent').value='';
+      toggleCreateMem();
+      loadMemPage();
+    } else {
+      addLog('❌','创建失败: '+(d.error||'未知错误'));
+    }
+  }catch(e){addLog('❌','创建失败: '+e.message)}
+}
+async function delMem(n){
+  // 修复：添加确认对话框
+  if(!confirm('确定删除 '+n+'？此操作不可恢复。'))return;
+  try{
+    await fetch(`/api/memory/${n}`,{method:'DELETE'});
+    addLog('🗑️', `记忆 "${n}" 已删除`);
+    loadMemPage();
+  }catch(e){addLog('❌','删除失败: '+e.message)}
+}
+async function searchMem(kw){
+  const r=document.getElementById('memSearchResults');
+  if(!kw.trim()){r.style.display='none';return}
+  debounce('mem', async ()=>{
+    try{
+      const resp=await fetch(`/api/memory/search?q=${encodeURIComponent(kw)}`);
+      const d=await resp.json();
+      if(d.success&&d.results.length){
+        r.style.display='block';
+        r.innerHTML=`<div style="font-size:.78rem;color:var(--t3);margin-bottom:6px">"${esc(kw)}" — ${d.file_count} 个文件</div>${d.results.map(x=>`<div class="card"><div style="font-size:.8rem;font-weight:600">📄 ${x.name} (${x.match_count} 处)</div>${x.matches.map(m=>`<div style="font-size:.7rem;color:var(--t3);margin-top:1px;padding-left:10px">行 ${m.line}: ${esc(m.text)}</div>`).join('')}</div>`).join('')}`;
+      } else {
+        r.style.display='block';
+        r.innerHTML='<div style="font-size:.78rem;color:var(--t3)">未找到</div>';
+      }
+    }catch(e){}
+  });
+}
+
+// ═══ PERMISSIONS PAGE ═══
+function loadPermissions(){
+  // 从本地存储加载
+  try{
+    const p=JSON.parse(localStorage.getItem('yi_permissions')||'{}');
+    document.getElementById('toolWhitelist').value=(p.toolWhitelist||[]).join('\n');
+    document.getElementById('toolBlacklist').value=(p.toolBlacklist||[]).join('\n');
+    document.getElementById('skillWhitelist').value=(p.skillWhitelist||[]).join('\n');
+    document.getElementById('skillBlacklist').value=(p.skillBlacklist||[]).join('\n');
+    document.getElementById('riskTolerance').value=p.riskTolerance||'1.0';
+  }catch(e){}
+  // 同步从后端加载（如果可用）
+  if(S.backendOk){
+    fetch('/api/permissions').then(r=>r.json()).then(d=>{
+      if(d.success&&d.permissions){
+        const p=d.permissions;
+        if(p.toolWhitelist) document.getElementById('toolWhitelist').value=p.toolWhitelist.join('\n');
+        if(p.toolBlacklist) document.getElementById('toolBlacklist').value=p.toolBlacklist.join('\n');
+        if(p.skillWhitelist) document.getElementById('skillWhitelist').value=p.skillWhitelist.join('\n');
+        if(p.skillBlacklist) document.getElementById('skillBlacklist').value=p.skillBlacklist.join('\n');
+        if(p.riskTolerance) document.getElementById('riskTolerance').value=String(p.riskTolerance);
+      }
+    }).catch(()=>{});
+  }
+}
+function savePermissions(){
+  const parseList=v=>v.split('\n').map(s=>s.trim()).filter(Boolean);
+  const perm={
+    toolWhitelist:parseList(document.getElementById('toolWhitelist').value),
+    toolBlacklist:parseList(document.getElementById('toolBlacklist').value),
+    skillWhitelist:parseList(document.getElementById('skillWhitelist').value),
+    skillBlacklist:parseList(document.getElementById('skillBlacklist').value),
+    riskTolerance:parseFloat(document.getElementById('riskTolerance').value)
+  };
+  localStorage.setItem('yi_permissions',JSON.stringify(perm));
+  // 同步到后端
+  if(S.backendOk){
+    fetch('/api/permissions',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(perm)
+    }).then(r=>r.json()).then(d=>{
+      if(d.success) addLog('✅','权限已保存（前端 + 后端即时生效）');
+      else addLog('⚠️','前端已保存，后端同步失败: '+d.error);
+    }).catch(()=>addLog('✅','前端已保存，后端未同步'));
+  } else {
+    addLog('✅','权限已保存（仅前端）');
+  }
+}
+function applyPreset(mode){
+  const presets={
+    strict:{
+      toolWhitelist:['web_search','ab_open','ab_screenshot','scan_files','read_file','list_files','find_files'],
+      toolBlacklist:['run_command','ab_click','ab_fill','ab_type','ab_press'],
+      skillWhitelist:[],
+      skillBlacklist:[],
+      riskTolerance:'0.5'
+    },
+    balanced:{
+      toolWhitelist:[],
+      toolBlacklist:[],
+      skillWhitelist:[],
+      skillBlacklist:[],
+      riskTolerance:'0.8'
+    },
+    open:{
+      toolWhitelist:[],
+      toolBlacklist:[],
+      skillWhitelist:[],
+      skillBlacklist:[],
+      riskTolerance:'1.0'
+    }
+  };
+  const p=presets[mode]; if(!p) return;
+  document.getElementById('toolWhitelist').value=p.toolWhitelist.join('\n');
+  document.getElementById('toolBlacklist').value=p.toolBlacklist.join('\n');
+  document.getElementById('skillWhitelist').value=p.skillWhitelist.join('\n');
+  document.getElementById('skillBlacklist').value=p.skillBlacklist.join('\n');
+  document.getElementById('riskTolerance').value=p.riskTolerance;
+  addLog('📋',`已应用${mode==='strict'?'严格':mode==='balanced'?'平衡':'开放'}模式预设`);
+}
+
+// ═══ CLEAR CHAT ═══
+function clearChat(){
+  // 修复：清空前确认
+  if(S.msgs.length > 0 && !confirm('确定清空所有对话记录？')) return;
+
+  document.getElementById('chatArea').innerHTML=`<div class="welcome" id="welcome"><div class="welcome-icon">易</div><h2>你好，我是 YI-Agent</h2><p>基于易经六十四卦的工具索引智能体。<br>用卦象缩小搜索空间，让 LLM 精准调用工具。</p><div class="hints"><div class="hint" onclick="quickAsk('帮我整理一下桌面文件')">📂 整理桌面</div><div class="hint" onclick="quickAsk('搜索一下最近AI领域有什么最新进展')">🔍 AI研究</div><div class="hint" onclick="quickAsk('帮我截个图看看当前屏幕')">📸 截图</div><div class="hint" onclick="quickAsk('找一下电脑里的PDF文件')">📄 搜索文件</div><div class="hint" onclick="quickAsk('帮我打开GitHub')">🌐 浏览</div><div class="hint" onclick="quickAsk('查看当前已加载的技能列表')">📋 技能</div></div></div>`;
+  S.msgs=[];S.rounds=0;S.tools=0;S.tokens=0;S.cost=0;updStats();saveMessages();
+  const p=document.getElementById('logPanel');if(p)p.innerHTML='<div class="log-entry"><span class="log-icon">💤</span><span class="log-text">等待指令...</span></div>';
+
+  // 修复：同步清理后端会话
+  if(S.backendOk){
+    fetch('/api/chat/reset',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session_id:S.sessionId})
+    }).catch(()=>{});
+  }
+  // 重置会话 ID
+  S.sessionId = 'web-' + Date.now();
+  addLog('🗑️','对话已清空');
+}
+
+// ═══ INIT ═══
+loadCfg();
+setTheme(localStorage.getItem('yi_theme')||'dark');
+loadPermissions();
+// 加载持久化消息
+loadMessages();
+// 键盘快捷键
+document.addEventListener('keydown',e=>{
+  // Ctrl+K / Cmd+K → 聚焦输入框
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('chatInput').focus()}
+  // Ctrl+L / Cmd+L → 清空对话
+  if((e.ctrlKey||e.metaKey)&&e.key==='l'){e.preventDefault();clearChat()}
+  // Esc → 关闭 sheet/dropdown
+  if(e.key==='Escape'){document.getElementById('sheetBg').classList.remove('show');closeDD()}
+});
+// 后端检测
+checkBackend().then(ok => {
+  if(!ok) startAutoReconnect();
+});
+// 加载持久化日志
+try{
+  const savedLogs=JSON.parse(sessionStorage.getItem('yi_logs')||'[]');
+  savedLogs.forEach(l=>addLog(l[0],l[1]));
+}catch(e){}
+</script>
+</body>
+</html>
